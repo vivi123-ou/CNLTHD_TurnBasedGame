@@ -1,16 +1,35 @@
-# React + Vite
+## Cấu trúc
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<img width="316" height="334" alt="Screenshot 2025-11-09 215057" src="https://github.com/user-attachments/assets/a21f4644-4489-401c-bace-3c72f91797c3" />
 
-Currently, two official plugins are available:
+<img width="369" height="470" alt="Screenshot 2025-11-09 224500" src="https://github.com/user-attachments/assets/98ddc6dd-9655-42aa-83c6-ad43bc7ed596" />
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+<img width="298" height="141" alt="Screenshot 2025-11-09 224535" src="https://github.com/user-attachments/assets/db621574-3db0-433b-a48d-00b931306d3c" />
 
-## React Compiler
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Menu
 
-## Expanding the ESLint configuration
+<img width="1275" height="740" alt="Screenshot 2025-11-10 230946" src="https://github.com/user-attachments/assets/5002800c-62ef-46e1-91e5-02a881a16084" />
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Level Screen
+
+<img width="1269" height="567" alt="Screenshot 2025-11-10 232936" src="https://github.com/user-attachments/assets/898e617c-0e6f-4188-9da1-fa4f9a940011" />
+
+Gameplay
+
+<img width="810" height="571" alt="Screenshot 2025-11-10 233100" src="https://github.com/user-attachments/assets/237a323c-eadc-41c8-91a6-d580c86df266" />
+
+Win Screen
+
+<img width="1919" height="842" alt="Screenshot 2025-11-09 140001" src="https://github.com/user-attachments/assets/1a87ba18-9372-49be-80ff-4f5430921ba2" />
+
+Tank's range
+
+<img width="547" height="216" alt="Screenshot 2025-11-10 232148" src="https://github.com/user-attachments/assets/2b753a3d-b081-41e9-b193-8c430f3a647f" />
+
+Log
+
+<img width="528" height="255" alt="Screenshot 2025-11-10 231957" src="https://github.com/user-attachments/assets/93e50934-aff8-4ca5-b5e9-590b459b08ea" />
+
+
+
