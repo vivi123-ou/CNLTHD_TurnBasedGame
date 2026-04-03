@@ -31,5 +31,7 @@ Log
 
 <img width="528" height="255" alt="Screenshot 2025-11-10 231957" src="https://github.com/user-attachments/assets/93e50934-aff8-4ca5-b5e9-590b459b08ea" />
 
+[Demo](https://youtu.be/n7w-u0xRtKU)
+
 
 
