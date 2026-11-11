@@ -1,101 +1,53 @@
 import React from 'react';
+import Sprite from './Sprite';
+import Scenery from './Scenery';
 
-const MenuScreen = ({ onStartGame, onContinue, onTutorial, onCredits, soundEnabled, onToggleSound }) => {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      color: 'white',
-      position: 'relative',
-    }}>
-      {/* Sound Toggle */}
-      <button
-        onClick={onToggleSound}
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          padding: '12px 24px',
-          fontSize: '16px',
-          backgroundColor: soundEnabled ? '#4CAF50' : '#F44336',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-        }}
-      >
-        {soundEnabled ? '🔊 Sound ON' : '🔇 Sound OFF'}
-      </button>
+const MenuScreen = ({ onStartGame, onContinue, onTutorial, onCredits, soundEnabled, onToggleSound }) => (
+  <div className="screen menu-screen">
+    <Scenery />
 
-      <h1 style={{
-        fontSize: '72px',
-        marginBottom: '20px',
-        textShadow: '4px 4px 8px rgba(0,0,0,0.5)',
-        animation: 'pulse 2s infinite',
-      }}>
-        🚜 Tank vs Alien 👾
-      </h1>
-      <p style={{
-        fontSize: '24px',
-        marginBottom: '50px',
-        opacity: 0.9,
-      }}>
-        Turn-based Strategy Game
-      </p>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <MenuButton onClick={onStartGame} text="🎮 NEW GAME" color="#4CAF50" />
-        
-        {onContinue && (
-          <MenuButton onClick={onContinue} text="▶️ CONTINUE" color="#2196F3" />
-        )}
-        
-        <MenuButton onClick={onTutorial} text="📖 TUTORIAL" color="#FF9800" />
-        <MenuButton onClick={onCredits} text="⭐ CREDITS" color="#9C27B0" />
+    <div className="menu-center">
+      <div className="title-plate">
+        <div className="title-small">LỮ ĐOÀN THÉP</div>
+        <h1 className="title-big">
+          TANK <span>vs</span> ALIEN
+        </h1>
+        <div className="title-sub">Chiến thuật theo lượt</div>
       </div>
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-      `}</style>
+      <div className="menu-buttons panel">
+        <button className="btn btn-primary btn-wide" onClick={onStartGame}>
+          Chiến dịch
+        </button>
+        <button className="btn btn-wide" onClick={onContinue || undefined} disabled={!onContinue}>
+          Tiếp tục trận
+        </button>
+        <button className="btn btn-wide" onClick={onTutorial}>
+          Hướng dẫn
+        </button>
+        <button className="btn btn-wide" onClick={onCredits}>
+          Ghi công
+        </button>
+      </div>
     </div>
-  );
-};
 
-const MenuButton = ({ onClick, text, color }) => (
-  <button
-    onClick={onClick}
-    style={{
-      padding: '20px 60px',
-      fontSize: '24px',
-      fontWeight: 'bold',
-      backgroundColor: color,
-      color: 'white',
-      border: 'none',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
-      transition: 'all 0.3s',
-      minWidth: '300px',
-    }}
-    onMouseOver={e => {
-      e.target.style.transform = 'scale(1.1)';
-      e.target.style.boxShadow = '0 12px 24px rgba(0,0,0,0.4)';
-    }}
-    onMouseOut={e => {
-      e.target.style.transform = 'scale(1)';
-      e.target.style.boxShadow = '0 8px 16px rgba(0,0,0,0.3)';
-    }}
-  >
-    {text}
-  </button>
+    <div className="menu-units">
+      <Sprite name="TANK_BRAWLER" size={72} />
+      <Sprite name="TANK_ARTILLERY" size={72} />
+    </div>
+    <div className="menu-aliens">
+      <Sprite name="ALIEN_SMALL" size={56} />
+      <Sprite name="ALIEN_LARGE" size={72} />
+    </div>
+
+    <button className="btn btn-small sound-btn" onClick={onToggleSound}>
+      Âm thanh: {soundEnabled ? 'BẬT' : 'TẮT'}
+    </button>
+
+    <div className="menu-footer">
+      v1.0 · Trò chơi có sử dụng công cụ AI hỗ trợ lập trình &amp; thiết kế
+    </div>
+  </div>
 );
 
 export default MenuScreen;

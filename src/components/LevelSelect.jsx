@@ -1,142 +1,120 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Sprite from './Sprite';
+import { LEVELS } from '../game/levels';
+import { MAX_LEVEL } from '../game/constants';
 
-const LevelSelect = ({ onSelectLevel, onBack, completedLevels = [] }) => {
-  const levels = [
-    { id: 1, name: 'Basic Training', difficulty: 'Easy', description: 'Learn the basics' },
-    { id: 2, name: 'First Contact', difficulty: 'Easy', description: 'Face the enemy' },
-    { id: 3, name: 'Urban Warfare', difficulty: 'Medium', description: 'City battle' },
-    { id: 4, name: 'Desert Storm', difficulty: 'Hard', description: 'Tough challenge' },
-    { id: 5, name: 'Final Stand', difficulty: 'Very Hard', description: 'Ultimate battle' },
-  ];
+// Vị trí các cứ điểm trên bản đồ chiến dịch (% theo khung bản đồ)
+const NODES = {
+  1: { x: 12, y: 72 },
+  2: { x: 31, y: 40 },
+  3: { x: 52, y: 66 },
+  4: { x: 70, y: 32 },
+  5: { x: 88, y: 58 },
+};
+
+// Trang trí bản đồ
+const DECOS = [
+  { s: 'TREE', x: 18, y: 28 }, { s: 'TREE', x: 23, y: 33 }, { s: 'TREE', x: 14, y: 36 },
+  { s: 'HILL', x: 8, y: 54 }, { s: 'HOUSE', x: 60, y: 78 }, { s: 'HOUSE', x: 45, y: 80 },
+  { s: 'ROCK', x: 62, y: 46 }, { s: 'HILL', x: 76, y: 14 }, { s: 'HILL', x: 66, y: 16 },
+  { s: 'TREE', x: 40, y: 18 }, { s: 'TREE', x: 92, y: 80 }, { s: 'SHIP', x: 90, y: 40, big: true },
+];
+
+const Stars = ({ n = 0 }) => (
+  <span className="stars-row">
+    {[1, 2, 3].map((i) => (
+      <i key={i} className={i <= n ? 'on' : ''}>★</i>
+    ))}
+  </span>
+);
+
+const LevelSelect = ({ onSelectLevel, onBack, progress }) => {
+  const { completed, stars } = progress;
+  const firstOpen = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1).find((l) => !completed.includes(l)) || MAX_LEVEL;
+  const [focus, setFocus] = useState(firstOpen);
+  const isLocked = (id) => id > 1 && !completed.includes(id - 1);
+  const lv = LEVELS[focus];
+
+  const path = Object.values(NODES)
+    .map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`)
+    .join(' ');
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '40px',
-      color: 'white',
-    }}>
-      <button
-        onClick={onBack}
-        style={{
-          padding: '12px 24px',
-          fontSize: '18px',
-          backgroundColor: '#666',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          marginBottom: '30px',
-        }}
-      >
-        ← Back to Menu
-      </button>
+    <div className="screen campaign-screen">
+      <div className="topbar">
+        <button className="btn btn-small" onClick={onBack}>◂ Menu</button>
+        <div className="topbar-title">BẢN ĐỒ CHIẾN DỊCH</div>
+        <div className="topbar-right">
+          ★ {Object.values(stars).reduce((a, b) => a + b, 0)}/{MAX_LEVEL * 3}
+        </div>
+      </div>
 
-      <h1 style={{ textAlign: 'center', marginBottom: '40px', fontSize: '48px' }}>
-        SELECT LEVEL
-      </h1>
-
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '30px',
-        maxWidth: '1200px',
-        margin: '0 auto',
-      }}>
-        {levels.map(level => {
-          const isCompleted = completedLevels.includes(level.id);
-          const isLocked = level.id > 1 && !completedLevels.includes(level.id - 1);
-
-          return (
-            <LevelCard
-              key={level.id}
-              level={level}
-              isCompleted={isCompleted}
-              isLocked={isLocked}
-              onClick={() => !isLocked && onSelectLevel(level.id)}
+      <div className="campaign-body">
+        <div className="map-paper">
+          <div className="map-grid" />
+          <svg className="map-path" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d={path} />
+          </svg>
+          <div className="map-compass">B<br />✦<br />N</div>
+          {DECOS.map((d, i) => (
+            <Sprite
+              key={i}
+              name={d.s}
+              className={`map-deco ${d.big ? 'big' : ''}`}
+              style={{ left: `${d.x}%`, top: `${d.y}%`, position: 'absolute' }}
             />
-          );
-        })}
+          ))}
+          {Object.entries(NODES).map(([id, p]) => {
+            const n = Number(id);
+            const locked = isLocked(n);
+            const done = completed.includes(n);
+            return (
+              <button
+                key={id}
+                className={`map-node ${locked ? 'locked' : ''} ${done ? 'done' : ''} ${focus === n ? 'focus' : ''}`}
+                style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                onClick={() => setFocus(n)}
+                onDoubleClick={() => !locked && onSelectLevel(n)}
+              >
+                <span className="flag">{locked ? '?' : n}</span>
+                {done && <Stars n={stars[n]} />}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mission panel">
+          <div className="panel-title">HỒ SƠ NHIỆM VỤ {focus}</div>
+          <div className="mission-body">
+            <div className="mission-icon">
+              <Sprite name={lv.enemy.some((e) => e.type === 'ALIEN_LARGE') ? 'ALIEN_LARGE' : 'ALIEN_SMALL'} />
+            </div>
+            <h2>{lv.name}</h2>
+            <div className="mission-region">{lv.region}</div>
+            <div className={`diff diff-${focus}`}>Độ khó: {lv.difficulty}</div>
+            <ul className="mission-facts">
+              <li>Quân ta: {lv.player.length} xe tăng</li>
+              <li>Quân địch: {lv.enemy.length} sinh vật</li>
+              <li>3 sao: thắng trong ≤ {lv.par} lượt, không mất xe nào</li>
+            </ul>
+            {completed.includes(focus) && (
+              <div className="mission-best">
+                Kỷ lục: <Stars n={stars[focus]} />
+              </div>
+            )}
+          </div>
+          <button
+            className="btn btn-primary btn-wide"
+            disabled={isLocked(focus)}
+            onClick={() => onSelectLevel(focus)}
+          >
+            {isLocked(focus) ? 'Chưa mở khoá' : 'Xuất kích ▸'}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-const LevelCard = ({ level, isCompleted, isLocked, onClick }) => {
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Easy': return '#4CAF50';
-      case 'Medium': return '#FF9800';
-      case 'Hard': return '#F44336';
-      case 'Very Hard': return '#9C27B0';
-      default: return '#666';
-    }
-  };
-
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        backgroundColor: 'white',
-        color: '#333',
-        padding: '30px',
-        borderRadius: '16px',
-        cursor: isLocked ? 'not-allowed' : 'pointer',
-        opacity: isLocked ? 0.5 : 1,
-        boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
-        transition: 'all 0.3s',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-      onMouseOver={e => !isLocked && (e.currentTarget.style.transform = 'translateY(-10px)')}
-      onMouseOut={e => (e.currentTarget.style.transform = 'translateY(0)')}
-    >
-      {isCompleted && (
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          fontSize: '32px',
-        }}>
-          ✅
-        </div>
-      )}
-
-      {isLocked && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          fontSize: '64px',
-        }}>
-          🔒
-        </div>
-      )}
-
-      <h2 style={{ marginBottom: '10px', fontSize: '24px' }}>
-        Level {level.id}
-      </h2>
-      <h3 style={{ marginBottom: '15px', color: '#666' }}>
-        {level.name}
-      </h3>
-      <div style={{
-        padding: '8px 16px',
-        backgroundColor: getDifficultyColor(level.difficulty),
-        color: 'white',
-        borderRadius: '20px',
-        display: 'inline-block',
-        marginBottom: '10px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-      }}>
-        {level.difficulty}
-      </div>
-      <p style={{ color: '#666', fontSize: '14px' }}>
-        {level.description}
-      </p>
-    </div>
-  );
-};
-
+export { Stars };
 export default LevelSelect;

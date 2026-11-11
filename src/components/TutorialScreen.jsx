@@ -1,117 +1,67 @@
 import React from 'react';
+import Sprite from './Sprite';
+import { UNIT_STATS } from '../game/constants';
 
-const TutorialScreen = ({ onClose }) => {
+const UnitRow = ({ type }) => {
+  const s = UNIT_STATS[type];
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '40px',
-      color: 'white',
-      overflowY: 'auto',
-    }}>
-      <button
-        onClick={onClose}
-        style={{
-          padding: '12px 24px',
-          fontSize: '18px',
-          backgroundColor: '#666',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          marginBottom: '30px',
-        }}
-      >
-        ← Back
-      </button>
-
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto',
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        padding: '40px',
-        borderRadius: '16px',
-      }}>
-        <h1 style={{ marginBottom: '30px', textAlign: 'center' }}>
-          📖 How to Play
-        </h1>
-
-        <Section title="🎯 Objective">
-          <p>Eliminate all enemy units to win the level!</p>
-        </Section>
-
-        <Section title="🎮 Controls">
-          <ul style={{ lineHeight: '2' }}>
-            <li>Click on your unit to select it</li>
-            <li>Green cells = valid movement positions</li>
-            <li>Red enemy units = valid attack targets</li>
-            <li>Click "End Turn" when finished</li>
-          </ul>
-        </Section>
-
-        <Section title="🚜 Your Units">
-          <UnitInfo
-            name="Tank Artillery"
-            icon="🚜"
-            stats="Long range (2-4), Low mobility"
-            tip="Use for back-line support"
-          />
-          <UnitInfo
-            name="Tank Brawler"
-            icon="🚜"
-            stats="Close range (1-2), High mobility"
-            tip="Use for front-line combat"
-          />
-        </Section>
-
-        <Section title="👾 Enemy Units">
-          <UnitInfo
-            name="Alien Large"
-            icon="👾"
-            stats="High HP, Medium range"
-            tip="Dangerous but slow"
-          />
-          <UnitInfo
-            name="Alien Small"
-            icon="👾"
-            stats="Fast, Low HP"
-            tip="Quick and evasive"
-          />
-        </Section>
-
-        <Section title="💡 Tips">
-          <ul style={{ lineHeight: '2' }}>
-            <li>Armor reduces incoming damage</li>
-            <li>Dodge rate = chance to avoid attacks</li>
-            <li>Position carefully - range matters!</li>
-            <li>Protect your Artillery units</li>
-          </ul>
-        </Section>
+    <div className="tut-unit">
+      <div className="portrait small"><Sprite name={type} /></div>
+      <div>
+        <b>{s.name}</b>
+        <div className="tut-stats">
+          HP {s.hp} · Công {s.attack} · Tầm {s.minRange}-{s.maxRange} · Đi {s.moveRange}
+        </div>
+        <div className="tut-desc">{s.desc}</div>
       </div>
     </div>
   );
 };
 
-const Section = ({ title, children }) => (
-  <div style={{ marginBottom: '30px' }}>
-    <h2 style={{ marginBottom: '15px', fontSize: '28px' }}>{title}</h2>
-    {children}
+const TerrainRow = ({ sprite, bg, name, text }) => (
+  <div className="tut-terrain">
+    <div className="tut-tile" style={{ background: bg }}>{sprite && <Sprite name={sprite} />}</div>
+    <div><b>{name}</b><div className="tut-desc">{text}</div></div>
   </div>
 );
 
-const UnitInfo = ({ name, icon, stats, tip }) => (
-  <div style={{
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '10px',
-  }}>
-    <div style={{ fontSize: '24px', marginBottom: '5px' }}>
-      {icon} <strong>{name}</strong>
+const TutorialScreen = ({ onClose }) => (
+  <div className="screen info-screen">
+    <div className="topbar">
+      <button className="btn btn-small" onClick={onClose}>◂ Menu</button>
+      <div className="topbar-title">SỔ TAY CHỈ HUY</div>
+      <div className="topbar-right" />
     </div>
-    <div style={{ fontSize: '14px', opacity: 0.9 }}>{stats}</div>
-    <div style={{ fontSize: '14px', opacity: 0.8, fontStyle: 'italic' }}>
-      💡 {tip}
+
+    <div className="tut-grid">
+      <section className="panel">
+        <div className="panel-title">CÁCH CHƠI</div>
+        <ol className="tut-steps">
+          <li><b>Chọn</b> một xe tăng của bạn (khung vàng).</li>
+          <li>Ô <span className="chip move">xanh</span> là nơi có thể <b>di chuyển</b>.</li>
+          <li>Địch có <span className="chip atk">tâm ngắm đỏ</span> là mục tiêu <b>bắn được</b>.</li>
+          <li>Mỗi xe: đi 1 lần + bắn 1 lần mỗi lượt. Pháo Kích <b>không bắn sau khi đi</b>.</li>
+          <li>Rê chuột vào địch để xem <b>dự báo sát thương</b>.</li>
+          <li>Bấm <b>Kết thúc lượt</b> khi xong. Đẩy lùi toàn bộ địch để thắng!</li>
+        </ol>
+        <div className="tut-keys">Phím tắt: <kbd>Esc</kbd>/chuột phải = bỏ chọn · <kbd>Space</kbd> = kết thúc lượt</div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">ĐƠN VỊ</div>
+        <UnitRow type="TANK_ARTILLERY" />
+        <UnitRow type="TANK_BRAWLER" />
+        <UnitRow type="ALIEN_LARGE" />
+        <UnitRow type="ALIEN_SMALL" />
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">ĐỊA HÌNH</div>
+        <TerrainRow bg="#5f8c35" sprite="TREE" name="Rừng" text="Tốn 2 bước. Giảm 10% sát thương, +15% né." />
+        <TerrainRow bg="#7d9a44" sprite="HILL" name="Đồi" text="Tốn 2 bước. Giảm 20% sát thương, pháo +1 tầm." />
+        <TerrainRow bg="#6f8a3f" sprite="ROCK" name="Đá tảng" text="Không đi qua được." />
+        <TerrainRow bg="#3d78b4" sprite="WAVES" name="Hồ nước" text="Không đi qua được, nhưng bắn qua được." />
+      </section>
     </div>
   </div>
 );

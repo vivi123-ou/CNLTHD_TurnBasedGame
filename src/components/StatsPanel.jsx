@@ -1,129 +1,169 @@
-import React from 'react';
-import { UNIT_STATS, TEAMS } from '../game/constants';
+import React, { useEffect, useRef } from 'react';
+import Sprite from './Sprite';
+import { UNIT_STATS, TEAMS, TERRAIN, GAME_STATUS } from '../game/constants';
+import {
+  getTerrainAt,
+  getUnitAtPosition,
+  getValidTargets,
+  estimateDamage,
+  getHitChance,
+  getAttackRange,
+} from '../game/gameLogic';
 
-const StatsPanel = ({ units, selectedUnit, combatLog }) => {
-  const playerUnits = units.filter(u => u.team === TEAMS.PLAYER);
-  const enemyUnits = units.filter(u => u.team === TEAMS.ENEMY);
-
-  const renderUnitList = (unitList, title) => (
-    <div style={{ marginBottom: '20px' }}>
-      <h3 style={{ 
-        margin: '0 0 10px 0',
-        color: title.includes('Player') ? '#2E7D32' : '#C62828'
-      }}>
-        {title}
-      </h3>
-      {unitList.map(unit => {
-        const stats = UNIT_STATS[unit.type];
-        const hpPercent = (unit.hp / stats.hp * 100).toFixed(0);
-        const isAlive = unit.hp > 0;
-        
-        return (
-          <div
-            key={unit.id}
-            style={{
-              padding: '8px',
-              marginBottom: '6px',
-              backgroundColor: unit.id === selectedUnit?.id ? '#FFF9C4' : '#f5f5f5',
-              border: `2px solid ${isAlive ? stats.color : '#999'}`,
-              borderRadius: '4px',
-              opacity: isAlive ? 1 : 0.5,
-            }}
-          >
-            <div style={{ 
-              fontWeight: 'bold',
-              marginBottom: '4px',
-              display: 'flex',
-              justifyContent: 'space-between',
-            }}>
-              <span>{stats.name}</span>
-              <span style={{ color: isAlive ? 'green' : 'red' }}>
-                {isAlive ? '✓' : '✗'}
-              </span>
-            </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              HP: {unit.hp} / {stats.hp} ({hpPercent}%)
-            </div>
-            <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
-              Armor: {stats.armor} | Dmg: {stats.baseDamage} | Dodge: {(stats.dodgeRate * 100).toFixed(0)}%
-            </div>
-            <div style={{ fontSize: '11px', color: '#888' }}>
-              Range: {stats.minRange}-{stats.maxRange} | Move: {stats.moveRange}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const renderCombatLog = () => {
-    if (combatLog.length === 0) return null;
-
-    const recentLogs = combatLog.slice(-5).reverse();
-
-    return (
-      <div style={{ marginTop: '20px' }}>
-        <h3 style={{ margin: '0 0 10px 0' }}>Combat Log</h3>
-        <div style={{
-          maxHeight: '200px',
-          overflowY: 'auto',
-          backgroundColor: '#1a1a1a',
-          padding: '10px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontFamily: 'monospace',
-        }}>
-          {recentLogs.map((log, index) => (
-            <div
-              key={index}
-              style={{
-                marginBottom: '8px',
-                paddingBottom: '8px',
-                borderBottom: '1px solid #333',
-                color: log.dodged ? '#FFC107' : '#4CAF50',
-              }}
-            >
-              <div>
-                {log.attacker} ➜ {log.defender}
-              </div>
-              {log.dodged ? (
-                <div style={{ color: '#FFC107' }}>
-                  ⚡ DODGED!
-                </div>
-              ) : (
-                <>
-                  <div style={{ color: '#F44336' }}>
-                    💥 Dmg: {log.rawDamage} - {log.armorBlocked} (armor) = {log.finalDamage}
-                  </div>
-                  <div style={{ color: log.remainingHp > 0 ? '#8BC34A' : '#F44336' }}>
-                    ❤️ HP Left: {log.remainingHp}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
+const Bar = ({ value, max }) => {
+  const pct = Math.max(0, (value / max) * 100);
   return (
-    <div style={{
-      width: '300px',
-      padding: '20px',
-      backgroundColor: '#fafafa',
-      borderRadius: '8px',
-      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-      maxHeight: '600px',
-      overflowY: 'auto',
-    }}>
-      <h2 style={{ marginTop: 0 }}>Unit Stats</h2>
-      {renderUnitList(playerUnits, '🟢 Player Units')}
-      {renderUnitList(enemyUnits, '🔴 Enemy Units')}
-      {renderCombatLog()}
+    <div className="bar">
+      <div className={`bar-fill ${pct <= 30 ? 'low' : pct <= 60 ? 'mid' : ''}`} style={{ width: `${pct}%` }} />
+      <span className="bar-text">
+        {value}/{max}
+      </span>
     </div>
   );
 };
 
-export default StatsPanel;
+const UnitCard = ({ unit, map }) => {
+  const s = UNIT_STATS[unit.type];
+  const t = getTerrainAt(map, unit.position.x, unit.position.y);
+  const range = getAttackRange(unit, unit.position, map);
+  const isPlayer = unit.team === TEAMS.PLAYER;
+  let status = 'Sẵn sàng';
+  if (unit.done) status = 'Đã hành động';
+  else if (unit.hasMoved) status = s.fireAfterMove ? 'Đã di chuyển — còn bắn được' : 'Đã di chuyển — pháo không bắn được';
 
+  return (
+    <div className={`unit-card ${isPlayer ? 'p' : 'e'}`}>
+      <div className="portrait">
+        <Sprite name={unit.type} />
+      </div>
+      <div className="unit-card-info">
+        <div className="unit-card-name">{s.name}</div>
+        <div className="unit-card-tag">{isPlayer ? 'LỮ ĐOÀN THÉP' : 'SINH VẬT ZORG'} · {unit.label}</div>
+        <Bar value={unit.hp} max={s.hp} />
+      </div>
+      <div className="stat-grid">
+        <span>Công</span><b>{s.attack}</b>
+        <span>Giáp</span><b>{Math.round(s.armor * 100)}%</b>
+        <span>Né</span><b>{Math.round((s.dodgeRate + t.dodge) * 100)}%</b>
+        <span>Tầm</span><b>{range.min}-{range.max}</b>
+        <span>Đi</span><b>{s.moveRange}</b>
+        <span>Địa hình</span><b>{t.name}</b>
+      </div>
+      {isPlayer && <div className="unit-card-status">{status}</div>}
+      <div className="unit-card-desc">{s.desc}</div>
+    </div>
+  );
+};
+
+const TerrainCard = ({ terrainKey }) => {
+  const t = TERRAIN[terrainKey];
+  const effects = [];
+  if (!Number.isFinite(t.cost)) effects.push('Không đi qua được');
+  else if (t.cost > 1) effects.push(`Tốn ${t.cost} điểm di chuyển`);
+  if (t.defense) effects.push(`Giảm ${Math.round(t.defense * 100)}% sát thương`);
+  if (t.dodge) effects.push(`+${Math.round(t.dodge * 100)}% né`);
+  if (t.rangeBonus) effects.push(`Pháo +${t.rangeBonus} tầm bắn`);
+  if (!effects.length) effects.push('Không có hiệu ứng');
+  return (
+    <div className="terrain-card">
+      <b>{t.name}</b>
+      <span>{effects.join(' · ')}</span>
+    </div>
+  );
+};
+
+const StatsPanel = ({ state, hoverCell, onWait, onEndTurn, canAct, aiThinking, allSpent }) => {
+  const { units, map, selectedId, combatLog, currentTurn, gameStatus } = state;
+  const selected = units.find((u) => u.id === selectedId);
+  const hovered = hoverCell ? getUnitAtPosition(hoverCell.x, hoverCell.y, units) : null;
+  const shown = hovered || selected;
+  const logRef = useRef(null);
+
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [combatLog.length]);
+
+  let forecast = null;
+  if (selected && hovered && hovered.team !== selected.team) {
+    const can = getValidTargets(selected, units, map).some((t) => t.id === hovered.id);
+    if (can) {
+      const dmg = estimateDamage(selected, hovered, map);
+      const hit = Math.round(getHitChance(hovered, map) * 100);
+      forecast = { dmg, hit, ko: dmg >= hovered.hp };
+    }
+  }
+
+  const playersLeft = units.filter((u) => u.team === TEAMS.PLAYER && u.hp > 0).length;
+  const enemiesLeft = units.filter((u) => u.team === TEAMS.ENEMY && u.hp > 0).length;
+  const isPlayerTurn = currentTurn === TEAMS.PLAYER && gameStatus === GAME_STATUS.PLAYING;
+
+  return (
+    <aside className="side panel">
+      <div className="panel-title">
+        <span>BÁO CÁO CHIẾN TRƯỜNG</span>
+        <span className="force-count">
+          <i className="dot p" /> {playersLeft} &nbsp; <i className="dot e" /> {enemiesLeft}
+        </span>
+      </div>
+
+      <div className="side-body">
+        {shown ? (
+          <UnitCard unit={shown} map={map} />
+        ) : (
+          <div className="hint-box">
+            {gameStatus !== GAME_STATUS.PLAYING
+              ? 'Trận đánh đã kết thúc.'
+              : isPlayerTurn
+                ? 'Chọn một xe tăng của bạn để ra lệnh. Rê chuột lên bất kỳ ô nào để xem thông tin.'
+                : 'Quân Zorg đang hành động...'}
+          </div>
+        )}
+
+        {forecast && (
+          <div className={`forecast ${forecast.ko ? 'ko' : ''}`}>
+            <span>DỰ BÁO</span>
+            <b>-{forecast.dmg} HP</b>
+            <span>Trúng {forecast.hit}%</span>
+            {forecast.ko && <em>HẠ GỤC!</em>}
+          </div>
+        )}
+
+        {hoverCell && <TerrainCard terrainKey={map[hoverCell.y][hoverCell.x]} />}
+      </div>
+
+      <div className="actions">
+        <button
+          className="btn btn-small"
+          onClick={onWait}
+          disabled={!canAct || !selected || selected.team !== TEAMS.PLAYER}
+          title="Đơn vị đứng yên, kết thúc hành động"
+        >
+          Chờ lệnh
+        </button>
+        <button className={`btn btn-primary ${allSpent ? 'pulse' : ''}`} onClick={onEndTurn} disabled={!canAct}>
+          {aiThinking ? 'Địch đang đi...' : 'Kết thúc lượt ▸'}
+        </button>
+      </div>
+
+      <div className="log-title">NHẬT KÝ</div>
+      <div className="log" ref={logRef}>
+        {combatLog.length === 0 && <div className="log-empty">— Chưa có giao tranh —</div>}
+        {combatLog.map((l) => (
+          <div key={l.seq} className={`log-line ${l.team === TEAMS.PLAYER ? 'p' : 'e'}`}>
+            <span className="log-turn">L{l.turn}</span> {l.attacker} ▸ {l.defender}:{' '}
+            {l.dodged ? (
+              <span className="miss">né được!</span>
+            ) : (
+              <>
+                <span className="dmg">-{l.finalDamage}</span>
+                {l.knockedOut && <span className="ko"> {l.team === TEAMS.PLAYER ? 'bị đẩy lùi!' : 'phải rút lui!'}</span>}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+};
+
+export default StatsPanel;

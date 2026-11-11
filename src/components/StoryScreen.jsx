@@ -1,203 +1,78 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
+import Sprite from './Sprite';
+import Scenery from './Scenery';
+import { getLevel } from '../game/levels';
+import { sfx } from '../utils/soundEffects';
 
-const StoryScreen = ({ levelId, onComplete, onSkip }) => {
-  const [currentText, setCurrentText] = useState('');
-  const [textIndex, setTextIndex] = useState(0);
-  const [showSkipButton, setShowSkipButton] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const completeCalled = useRef(false);
+const ICONS = { BUG: 'ALIEN_SMALL', BIG: 'ALIEN_LARGE', TOWN: 'HOUSE', STORM: 'HILL', SHIP: 'SHIP' };
 
-  const stories = {
-    1: {
-      title: 'Level 1: Basic Training',
-      texts: [
-        'Year 2145. Earth is under alien invasion.',
-        'You are Commander of the last Tank Brigade.',
-        'Your mission: Defend humanity at all costs.',
-        'Let\'s start with basic training...',
-      ],
-      image: '🌍',
-    },
-    2: {
-      title: 'Level 2: First Contact',
-      texts: [
-        'Well done, Commander!',
-        'Enemy scouts have been detected nearby.',
-        'This is your first real combat.',
-        'Show them what you\'re made of!',
-      ],
-      image: '👾',
-    },
-    3: {
-      title: 'Level 3: Urban Warfare',
-      texts: [
-        'The aliens are advancing to the cities.',
-        'Civilians are counting on you.',
-        'Urban combat is intense and dangerous.',
-        'Stay focused and protect the city!',
-      ],
-      image: '🏙️',
-    },
-    4: {
-      title: 'Level 4: Desert Storm',
-      texts: [
-        'Intelligence reports heavy enemy presence in the desert.',
-        'This will be your toughest battle yet.',
-        'The aliens are stronger and smarter.',
-        'Give it everything you\'ve got!',
-      ],
-      image: '🏜️',
-    },
-    5: {
-      title: 'Level 5: Final Stand',
-      texts: [
-        'This is it, Commander.',
-        'The alien mothership has arrived.',
-        'Defeat it, and Earth is saved.',
-        'Fail, and humanity falls.',
-        'The fate of the world is in your hands!',
-      ],
-      image: '🛸',
-    },
-  };
+const StoryScreen = ({ levelId, onComplete, onBack }) => {
+  const level = getLevel(levelId);
+  const lines = level.story;
+  const [line, setLine] = useState(0);
+  const [chars, setChars] = useState(0);
 
-  const story = stories[levelId] || stories[1];
+  const current = lines[line] || '';
+  const lineDone = chars >= current.length;
+  const allDone = line >= lines.length - 1 && lineDone;
 
-  // useEffect 1: Reset khi level thay đổi
   useEffect(() => {
-    setIsReady(false);
-    setCurrentText('');
-    setTextIndex(0);
-    setShowSkipButton(false);
-    completeCalled.current = false;
-    
-    const timer = setTimeout(() => setIsReady(true), 100);
-    return () => clearTimeout(timer);
+    setLine(0);
+    setChars(0);
   }, [levelId]);
 
-  // useEffect 2: Chạy animation text
   useEffect(() => {
-    if (!isReady) return;
-    
-    if (textIndex < story.texts.length) {
-      const text = story.texts[textIndex];
-      let charIndex = 0;
-      
-      setShowSkipButton(true);
-      
-      const typeInterval = setInterval(() => {
-        if (charIndex <= text.length) {
-          setCurrentText(text.substring(0, charIndex));
-          charIndex++;
-        } else {
-          clearInterval(typeInterval);
-          // Chờ 1s rồi chuyển sang text tiếp theo
-          setTimeout(() => {
-            setTextIndex(prev => prev + 1);
-          }, 1000);
-        }
-      }, 50);
-      
-      return () => clearInterval(typeInterval);
-      
-    } else if (textIndex === story.texts.length && textIndex > 0) {
-      const timer = setTimeout(() => {
-        if (!completeCalled.current) {
-          completeCalled.current = true;
-          setIsReady(false);
-          onComplete();
-        }
-      }, 2000);
-      return () => clearTimeout(timer);
+    if (lineDone) return undefined;
+    const t = setTimeout(() => {
+      setChars((c) => c + 1);
+      if (chars % 3 === 0) sfx.typing();
+    }, 28);
+    return () => clearTimeout(t);
+  }, [chars, lineDone]);
+
+  const advance = () => {
+    if (!lineDone) {
+      setChars(current.length);
+    } else if (!allDone) {
+      setLine((l) => l + 1);
+      setChars(0);
     }
-  }, [textIndex, isReady, story.texts, onComplete]);
+  };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      color: 'white',
-      padding: '40px',
-      position: 'relative',
-    }}>
-      <div style={{
-        fontSize: '120px',
-        marginBottom: '40px',
-        animation: 'float 3s ease-in-out infinite',
-      }}>
-        {story.image}
+    <div className="screen story-screen" onClick={advance}>
+      <Scenery ufo={levelId === 5} />
+      <div className="dossier panel" onClick={(e) => e.stopPropagation()}>
+        <div className="panel-title">
+          <span>MẬT LỆNH · NHIỆM VỤ {levelId}</span>
+          <span>{level.region.toUpperCase()}</span>
+        </div>
+        <div className="dossier-body" onClick={advance}>
+          <div className="dossier-photo">
+            <Sprite name={ICONS[level.icon] || 'ALIEN_SMALL'} />
+            <div className="stamp">TUYỆT MẬT</div>
+          </div>
+          <div className="dossier-text">
+            <h2>{level.name}</h2>
+            {lines.slice(0, line).map((l, i) => (
+              <p key={i}>{l}</p>
+            ))}
+            <p>
+              {current.slice(0, chars)}
+              {!allDone && <span className="caret">▌</span>}
+            </p>
+          </div>
+        </div>
+        <div className="dossier-actions">
+          <button className="btn btn-small" onClick={onBack}>◂ Bản đồ</button>
+          <span className="dossier-hint">{allDone ? '' : 'Nhấp chuột để đọc tiếp'}</span>
+          {allDone ? (
+            <button className="btn btn-primary pulse" onClick={onComplete}>Vào trận ▸</button>
+          ) : (
+            <button className="btn btn-small" onClick={onComplete}>Bỏ qua ▸▸</button>
+          )}
+        </div>
       </div>
-
-      <h1 style={{
-        fontSize: '48px',
-        marginBottom: '40px',
-        textAlign: 'center',
-        color: 'white',
-      }}>
-        {story.title}
-      </h1>
-
-      <div style={{
-        maxWidth: '800px',
-        minHeight: '150px',
-        fontSize: '28px',
-        textAlign: 'center',
-        lineHeight: '1.8',
-        padding: '30px',
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: '16px',
-        animation: 'fadeIn 1s',
-        color: 'white',
-      }}>
-        {currentText}
-      </div>
-
-      <div style={{
-        marginTop: '40px',
-        fontSize: '14px',
-        opacity: 0.6,
-        color: 'white',
-      }}>
-        {textIndex} / {story.texts.length}
-      </div>
-
-      {showSkipButton && (
-        <button
-          onClick={onSkip}
-          style={{
-            position: 'absolute',
-            bottom: '40px',
-            right: '40px',
-            padding: '12px 24px',
-            fontSize: '18px',
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            border: '2px solid white',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-          }}
-          onMouseOver={e => e.target.style.backgroundColor = 'rgba(255,255,255,0.3)'}
-          onMouseOut={e => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
-        >
-          Skip →
-        </button>
-      )}
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 };

@@ -1,118 +1,67 @@
-const SAVE_KEY = 'tankVsAlien_saveData';
+// Lưu tiến trình bằng localStorage (chỉ trên trình duyệt của người chơi, không gửi đi đâu)
+// Mọi thao tác đều bọc try/catch vì trong iframe có thể bị chặn lưu trữ.
+const SAVE_KEY = 'steelBrigade_battle_v2';
+const PROGRESS_KEY = 'steelBrigade_progress_v2';
 
-// ============================================
-// SAVE GAME
-// ============================================
-
-export const saveGame = (gameState) => {
+const read = (key) => {
   try {
-    const saveData = {
-      currentLevel: gameState.currentLevel || 1,
-      completedLevels: gameState.completedLevels || [],
-      units: gameState.units,
-      currentTurn: gameState.currentTurn,
-      combatLog: gameState.combatLog,
-      timestamp: Date.now(),
-      version: '1.0',
-    };
-
-    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-    console.log('✅ Game saved successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to save game:', error);
-    return false;
-  }
-};
-
-// ============================================
-// LOAD GAME
-// ============================================
-
-export const loadGame = () => {
-  try {
-    const savedData = localStorage.getItem(SAVE_KEY);
-    
-    if (!savedData) {
-      console.log('ℹ️ No saved game found');
-      return null;
-    }
-
-    const gameState = JSON.parse(savedData);
-    
-    // Validate save data
-    if (!gameState.version || !gameState.units) {
-      console.warn('⚠️ Invalid save data');
-      return null;
-    }
-
-    console.log('✅ Game loaded successfully');
-    return gameState;
-  } catch (error) {
-    console.error('❌ Failed to load game:', error);
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
     return null;
   }
 };
 
-// ============================================
-// CHECK IF SAVE EXISTS
-// ============================================
-
-export const hasSavedGame = () => {
+const write = (key, value) => {
   try {
-    const savedData = localStorage.getItem(SAVE_KEY);
-    return savedData !== null;
-  } catch (error) {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
     return false;
   }
 };
 
-// ============================================
-// DELETE SAVE
-// ============================================
+export const saveGame = (state) =>
+  write(SAVE_KEY, {
+    version: 2,
+    level: state.level,
+    units: state.units,
+    turnNumber: state.turnNumber,
+    combatLog: state.combatLog.slice(-15),
+  });
+
+export const loadGame = () => {
+  const data = read(SAVE_KEY);
+  if (!data || data.version !== 2 || !Array.isArray(data.units)) return null;
+  return data;
+};
+
+export const hasSavedGame = () => Boolean(loadGame());
 
 export const deleteSave = () => {
   try {
     localStorage.removeItem(SAVE_KEY);
-    console.log('✅ Save deleted');
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to delete save:', error);
-    return false;
+  } catch {
+    /* ignore */
   }
 };
 
-// ============================================
-// SAVE PROGRESS (Completed Levels)
-// ============================================
-
-export const saveProgress = (completedLevels) => {
-  try {
-    const progressData = {
-      completedLevels,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem('tankVsAlien_progress', JSON.stringify(progressData));
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to save progress:', error);
-    return false;
-  }
-};
-
-// ============================================
-// LOAD PROGRESS
-// ============================================
-
+// progress: { completed: number[], stars: { [level]: 1..3 } }
 export const loadProgress = () => {
+  const data = read(PROGRESS_KEY);
+  return {
+    completed: Array.isArray(data?.completed) ? data.completed : [],
+    stars: data?.stars && typeof data.stars === 'object' ? data.stars : {},
+  };
+};
+
+export const saveProgress = (progress) => write(PROGRESS_KEY, progress);
+
+export const resetProgress = () => {
   try {
-    const progressData = localStorage.getItem('tankVsAlien_progress');
-    if (!progressData) return [];
-    
-    const data = JSON.parse(progressData);
-    return data.completedLevels || [];
-  } catch (error) {
-    console.error('❌ Failed to load progress:', error);
-    return [];
+    localStorage.removeItem(PROGRESS_KEY);
+    localStorage.removeItem(SAVE_KEY);
+  } catch {
+    /* ignore */
   }
 };
