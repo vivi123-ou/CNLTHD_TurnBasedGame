@@ -58,7 +58,7 @@ const ResultModal = ({ result, level, onNext, onRetry, onMap, onCredits }) => {
           <button className="btn btn-small" onClick={onMap}>Bản đồ</button>
           <button className="btn btn-small" onClick={onRetry}>Chơi lại</button>
           {isFinal ? (
-            <button className="btn btn-primary" onClick={onCredits}>Ghi công ▸</button>
+            <button className="btn btn-primary" onClick={onCredits}>Credits ▸</button>
           ) : win ? (
             <button className="btn btn-primary" onClick={onNext}>Nhiệm vụ kế ▸</button>
           ) : (

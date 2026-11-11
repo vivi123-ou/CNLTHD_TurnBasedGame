@@ -26,7 +26,7 @@ const MenuScreen = ({ onStartGame, onContinue, onTutorial, onCredits, soundEnabl
           Hướng dẫn
         </button>
         <button className="btn btn-wide" onClick={onCredits}>
-          Ghi công
+          Credits
         </button>
       </div>
     </div>

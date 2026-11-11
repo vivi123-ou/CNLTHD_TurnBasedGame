@@ -12,7 +12,7 @@ const CreditsScreen = ({ onClose, onResetProgress }) => (
   <div className="screen credits-screen">
     <Scenery />
     <div className="credits panel">
-      <div className="panel-title">GHI CÔNG</div>
+      <div className="panel-title">CREDITS</div>
       <div className="credits-body">
         <h2>TANK vs ALIEN</h2>
         <Row title="Thiết kế & phát triển">Lê Quỳnh Minh Vân</Row>
